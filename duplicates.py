@@ -3,32 +3,29 @@ import argparse
 from os.path import join, getsize
 
 
-def are_files_duplicates(folder_path):
+def find_duplicates(folder_path):
     known_files = dict()
-    size_position = 0
-    duplicate_position = 2
+    duplicate_path_position = 1
     for root, dirs, files in os.walk(folder_path):
         for filename in files:
             file_size = getsize(join(root, filename))
-            if filename in known_files and file_size == known_files[filename][size_position]:
-                known_files[filename][duplicate_position].append(root)
+            uid = join(filename, str(file_size))
+            if uid in known_files:
+                known_files[uid][duplicate_path_position].append(root)
             else:
                 duplicate_path = []
-                known_files[filename] = [file_size, root, duplicate_path]
+                known_files[uid] = [root, duplicate_path]
     return known_files
 
 
-def pprint_duplicates(data):
-    duplicate_position = 2
-    root_position = 1
-    if data:
-        for key in data:
-            if key:
-                for path in data[key][duplicate_position]:
-                    print('File "{}" located in "{}" and "{}"'.format(
-                        key, data[key][root_position], path))
-    else:
-        print('In this folder are no duplicates!')
+def pprint_duplicates(dupl_dict):
+    duplicate_path = 1
+    root_path = 0
+    filename_pos = 0
+    for item in filter(lambda x: dupl_dict[x][duplicate_path], dupl_dict):
+        for path in dupl_dict[item][duplicate_path]:
+            print('File "{}" located in "{}" and "{}"'.format(
+                item.split('/')[filename_pos], dupl_dict[item][root_path], path))
 
 
 if __name__ == '__main__':
@@ -37,4 +34,4 @@ if __name__ == '__main__':
         '-p', '--path', help="Input path to folder with duplicates:", type=str, required=True)
 
     args = parser.parse_args()
-    pprint_duplicates(are_files_duplicates(args.path))
+    pprint_duplicates(find_duplicates(args.path))
